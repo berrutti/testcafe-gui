@@ -1,0 +1,21 @@
+{
+  "name": "testcafe-gui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^5.0.6",
+    "electron-rebuild": "^1.8.5",
+    "nodemon": "^1.19.1",
+    "testcafe": "^1.2.1"
+  },
+  "scripts": {
+    "start": "electron .",
+    "watch": "nodemon --exec 'electron .'",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "rebuild": "electron-rebuild testcafe"
+  },
+  "author": "Matias Berrutti",
+  "license": "MIT"
+}
