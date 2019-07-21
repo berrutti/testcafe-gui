@@ -1,9 +1,10 @@
 const createTestCafe = require('testcafe');
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const windowStateKeeper = require('electron-window-state');
 
 let runner = null;
 let mainWindow = null;
+let testFiles = null;
 
 function createWindow() {
     let state = windowStateKeeper({
@@ -24,7 +25,7 @@ function createWindow() {
     mainWindow.loadFile('./renderer/main.html');
 
     state.manage(mainWindow);
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     mainWindow.on('closed', ()=>{
         mainWindow = null;
@@ -38,16 +39,40 @@ app.on('window-all-closed', ()=>{
         app.quit();
 })
 
-// createTestCafe('localhost', 1337, 1338)
-//     .then(testcafe => {
-        
-//         runner = testcafe.createRunner();
+ipcMain.on('folder-clicked',e=>{
+    const options = {
+        title:'Open folder...',
+        defaultPath:app.getPath('appData'),
+        buttonLabel: 'Open',
+        filters: [{
+            name: 'Test Files',
+            extensions: [
+                'ts','js'
+            ]
+        }],
+        properties: ['openFile', 'openDirectory', 'multiSelections'],
+        message: 'Some message'
+    }
 
-//         return runner
-//             .src(['tests/fixture1.js'])
-//             .browsers(['chrome'])
-//             .run()
-//             .then(failedCount => {
-//                 console.log(failedCount);
-//             })
-//         });
+    dialog.showOpenDialog(mainWindow,options,(filePaths)=>{
+        testFiles = filePaths;       
+    })
+})
+
+ipcMain.on('play-clicked',e=>{
+    if (testFiles) {
+        createTestCafe('localhost', 1337, 1338)
+            .then(testcafe => {
+                
+                runner = testcafe.createRunner();
+
+                return runner
+                    .src(testFiles)
+                    .browsers(['chrome'])
+                    .run()
+                    .then(failedCount => {
+                        console.log(failedCount);
+                    })
+                });
+    }
+})
