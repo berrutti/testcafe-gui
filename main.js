@@ -2,9 +2,17 @@ const createTestCafe = require('testcafe');
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const windowStateKeeper = require('electron-window-state');
 
+let testcafeServer = null;
 let runner = null;
 let mainWindow = null;
 let testFiles = null;
+let browsers = null;
+
+createTestCafe('localhost', 1337, 1338)
+    .then(testcafe => {
+        testcafeServer = testcafe;
+        runner = testcafeServer.createRunner();
+    });
 
 function createWindow() {
     let state = windowStateKeeper({
@@ -35,8 +43,12 @@ function createWindow() {
 app.on('ready', createWindow);
 
 app.on('window-all-closed', ()=>{
-    if (process.platform !== 'darwin')
+    if (process.platform !== 'darwin') {
+        if (testcafeServer) {
+            testcafeServer.close();
+        }
         app.quit();
+    }
 })
 
 ipcMain.on('folder-clicked',e=>{
@@ -59,20 +71,27 @@ ipcMain.on('folder-clicked',e=>{
     })
 })
 
-ipcMain.on('play-clicked',e=>{
-    if (testFiles) {
-        createTestCafe('localhost', 1337, 1338)
-            .then(testcafe => {
-                
-                runner = testcafe.createRunner();
+ipcMain.on('play-clicked',event=>{
+    if (testFiles&&runner) {
+        event.reply('tests-running');
 
-                return runner
-                    .src(testFiles)
-                    .browsers(['chrome'])
-                    .run()
-                    .then(failedCount => {
-                        console.log(failedCount);
-                    })
-                });
+        runner
+            .src(testFiles)
+            .browsers(['chrome'])
+            .run()
+            .then(failedCount => {
+                event.reply('tests-finished');
+                //console.log(failedCount
+            })
+            .catch(error => { 
+                event.reply('tests-finished-errors');
+                console.error(error);
+            });
+    }
+});
+
+ipcMain.on('stop-clicked',e=>{
+    if (runner) {
+        runner.stop();
     }
 })

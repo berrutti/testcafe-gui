@@ -10,10 +10,21 @@ playButton.addEventListener('click', ()=>{
 });
 
 stopButton.addEventListener('click', ()=>{
-    console.log('Pressed stop');
+    ipcRenderer.send('stop-clicked');
 });
 
 folderButton.addEventListener('click', ()=>{
     ipcRenderer.send('folder-clicked');
-})
+});
 
+ipcRenderer.on('tests-running',event=>{
+    console.log('Tests running!')
+});
+
+ipcRenderer.on('tests-finished',event=>{
+    console.log('Tests finished!')
+});
+
+ipcRenderer.on('tests-finished-errors',event=>{
+    console.log('Tests running!')
+});
